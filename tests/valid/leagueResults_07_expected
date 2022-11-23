@@ -1,0 +1,15 @@
+Trying single argument as a text file with results
+
+Omitting lines:
+FC Awesome 1, Grouches
+Grouches 3, Dogs
+
+
+Printing contents of General Table:
+
+1. Tarantulas, 10 pts
+2. Dogs, 8 pts
+3. Snakes, 8 pts
+4. Lions, 5 pts
+5. FC Awesome, 4 pts
+6. Grouches, 3 pts

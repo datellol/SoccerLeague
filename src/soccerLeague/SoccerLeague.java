@@ -1,5 +1,8 @@
 package soccerLeague;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -10,13 +13,14 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+//import org.junit.*;
 
 public class SoccerLeague {
 	
 	private static boolean isValidFormat = false;
 	private static Map<String, Integer> GeneralTable = new HashMap<>();
 	private static Matcher matchResult = null;
-	public final static String RESULT_PATTERN = "^([\\w\\s]+)\\s(\\d{1,3}),\\s([\\w\\s]+)\\s(\\d{1,3})$";
+	private final static String RESULT_PATTERN = "^([\\w\\s]+)\\s(\\d{1,3}),\\s([\\w\\s]+)\\s(\\d{1,3})$";
 	
 	public static void main(String[] args) {
 		
@@ -24,9 +28,11 @@ public class SoccerLeague {
 			int option = 0;
 			Scanner input = new Scanner(System.in);
 			option = menu(input);
+			
+			//No args option 1
 			if(option == 1) {
-				System.out.println("Type the number of match results to enter");				
-				int counter = 0;				
+				System.out.println("\nType the number of match results to enter:");
+				int counter = 0;
 				String inputString = input.nextLine();
 				
 				if (inputString == null) {
@@ -51,54 +57,103 @@ public class SoccerLeague {
 			    		break;
 			    	}
 			    	else if(isValidFormat(inputString)) {
-			    		calculatePoints();
+			    		registerPoints(inputString);
 			    	}
 			    	else --i;
 			    }
 			    input.close();
 			    printGeneralTable();			    
 			}
-
+			//No args option 1
+			
+			//No args option 2
 			else if(option == 2) {
-				boolean isValidPath = isValidPath(args[0]);
-				if(isValidPath) {
-					//read file
+				System.out.println("\nType an absolute file path with results:");				
+				String path = input.nextLine();
+				//path = adjustOSXPath(path);
+				try {
+					readFile(path);
 				}
+				catch(IOException e) {
+					System.out.println("There was a problem with file: " +
+										path + "\n" +
+										e.getMessage());
+				}
+				printGeneralTable();
 			}
-
-			else { System.out.println("Bye!"); }
+			//No args option 2
+			
+			//No args option 3 
+			else {
+				System.out.println("Bye!");
+			}
+			//No args option 3
 		}
 		
+		//With arg == 1 
 		else if(args.length == 1) { //if argument length == 1 --> it is a file
-			boolean isValidPath = isValidPath(args[0]);
-			if(isValidPath) {
-				//readfile
+			System.out.println("Trying single argument as a text file with results");
+			String path = args[0].toString();
+			//path = adjustOSXPath(path);
+			try {
+				readFile(path);
 			}
+			catch(IOException e) {
+				System.out.println("There was a problem with file: " +
+									path + "\n" +
+									e.getMessage());
+			}
+			printGeneralTable();
 		}
+		//With arg == 1
 		
-		//if argument length > 1 it is a result
+		//With args > 1 it is a result
 		else {
 			StringBuilder result = new StringBuilder();
 			Arrays.stream(args).forEach(string -> result.append(string).append(" "));
 			isValidFormat = isValidFormat(result.toString().trim());
 			if(isValidFormat) {
-				calculatePoints();
+				registerPoints(result.toString().trim());
 			}
-		}	
+		}
+		//With args > 1 it is a result
 	}
 	
 
+	/*METHODS*/
+	static int menu(Scanner input) {
+		int option = 0;
+		System.out.println(
+							"Please choose an option:\n" +
+							"1 - Type n results manually\n" +
+							"2 - Read n results from a text file\n" +
+							"3 - Exit"
+						   );
+		String inputString = input.nextLine();
+		
+		if (inputString == null) {
+	    	System.out.println("Not a valid option\n");
+	    	option = 3;
+		}
+		try {
+			option  = Integer.parseInt(inputString);
+	    }
+	    catch (NumberFormatException nfe) { 
+	    	System.out.println("Not a valid option\n");
+	    	option = 3;
+	    }
+		return option;
+	}
 	
 	static boolean isValidFormat(String stringResult) {
 		boolean result = false;
 		Pattern pattern = Pattern.compile(/*RegexPatterns.*/RESULT_PATTERN);
-		matchResult = pattern.matcher(stringResult);
+		matchResult = pattern.matcher(stringResult.trim());
 		if(matchResult.find()) { result = true; }
 		return result;
 	}
-
 	
-	static void calculatePoints() {
+	static void registerPoints(String line) {
 		int r1 = Integer.parseInt(matchResult.group(2)); //r1 -> team1's result
 		int r2 = Integer.parseInt(matchResult.group(4)); //r2 -> team2's result
 		String t1 = matchResult.group(1); // t1 -> team1
@@ -118,44 +173,6 @@ public class SoccerLeague {
 		}		
 	}
 	
-	static int menu(Scanner input) {
-		int option = 0;
-		System.out.println("Please choose an option:\n" +
-							"1 - Type results manually\n" +
-							"2 - Type an absolute file path with results\n" +
-							"3 - Exit" );		
-		String inputString = input.nextLine();
-		
-		if (inputString == null) {
-	    	System.out.println("You did not choose a valid option\n");
-	    	option = 3;
-		}
-		try {
-			option  = Integer.parseInt(inputString);
-	    }
-	    catch (NumberFormatException nfe) { 
-	    	System.out.println("You did not choose a valid option\n");
-	    	option = 3;
-	    }
-		return option;
-	}
-
-	
-	static void printGeneralTable() {
-		if(GeneralTable.isEmpty()) {
-			System.out.println("There is no contents for this league general table");
-		}
-		else {
-			System.out.println("Printing contents of General Table\n\n");
-			Map<String, Integer> sortedGeneralTable = orderGeneralTable();
-			//GeneralTable.forEach((team,points)->System.out.println(team + ", " + points + (points == 1 ? " pt" : " pts")));
-			int i = 0;
-			for(Entry<String, Integer> team : sortedGeneralTable.entrySet()) {
-				System.out.println(++i + ". " + team.getKey()+ ", " + team.getValue() + (team.getValue() == 1 ? " pt" : " pts"));
-			}
-		}
-	}
-
 	static Map<String, Integer> orderGeneralTable() {
 		//Integer[] sortedPoints = GeneralTable.values().toArray(new Integer[GeneralTable.values().size()]);
 		//Arrays.sort(sortedPoints);
@@ -164,16 +181,47 @@ public class SoccerLeague {
 				.stream()
 			    .sorted(Entry.comparingByValue(Comparator.reverseOrder()))
 			    .collect(Collectors.toMap(Entry::getKey, Entry::getValue,
-			                              (e1, e2) -> e1, LinkedHashMap::new));
+			                              (t, r) -> t, LinkedHashMap::new));
 		
 		return sortedGeneralTable;
 	}
 
-	static boolean isValidPath(String path) {
-		boolean result = false;
-		
-		
-		
-		return result;
+	static String adjustOSXPath(String path) {
+		return path.replaceAll("\\", "/");
+	}
+	
+	static void readFile(String path) throws IOException {
+		String line = "";
+		StringBuilder omissions = new StringBuilder();
+		try (
+				FileReader file = new FileReader(path);
+				BufferedReader buffer = new BufferedReader(file)
+			) {			
+	    		while((line = buffer.readLine()) != null)
+	    			if(isValidFormat(line)) {
+	    				registerPoints(line);
+	    			}
+	    			else {
+	    				//System.out.println("Omitting line: " + line + "\n");
+	    				omissions.append(line + "\n");
+	    			}
+				}
+		if(!omissions.isEmpty()) System.out.println("\nOmitting lines:\n" + omissions);
+	}
+
+	static void printGeneralTable() {
+		if(GeneralTable.isEmpty()) {
+			System.out.println("\nThere is no contents for this league general table\nbye!");
+		}
+		else {
+			System.out.println("\nPrinting contents of General Table:\n");
+			Map<String, Integer> sortedGeneralTable = orderGeneralTable();
+			//GeneralTable.forEach((team,points)->System.out.println(team + ", " + points + (points == 1 ? " pt" : " pts")));
+			int i = 0;
+			for(Entry<String, Integer> team : sortedGeneralTable.entrySet()) {
+				System.out.println(++i + ". " + team.getKey()+ ", " + team.getValue() + (team.getValue() == 1 ? " pt" : " pts"));
+			}
+			
+		}
 	}
 }
